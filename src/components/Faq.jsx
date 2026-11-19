@@ -15,7 +15,7 @@ const ITEMS = [
   },
   {
     q: 'Which GST rates does it offer?',
-    a: 'The current slabs are 0%, 0.25%, 3%, 5%, 18% and 40%. The old 12% and 28% slabs, replaced on 22 September 2025, are still there for older invoices, and you can type any other rate. Which rate applies depends on what you sell, so confirm it for your goods or service on the CBIC website or with your chartered accountant.',
+    a: 'Since 22 September 2025 the main rates are 5% and 18%, with 40% for select sin and luxury goods, and special rates of 0.25%, 1.5% and 3% for specified goods, plus 0% for exempt supplies. The old 12% slab was abolished and 28% now applies only to a few specified goods. Both are under "Older or rare" for earlier invoices, and you can type any other rate. Which rate applies depends on what you sell, so confirm it for your goods or service on the CBIC website or with your chartered accountant.',
   },
   {
     q: 'How is the amount rounded?',

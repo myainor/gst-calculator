@@ -12,8 +12,14 @@
 export const MAX_RUPEES = 100_000_000_000; // ₹10,000 crore, far above any real invoice
 export const MAX_PAISE = MAX_RUPEES * 100;
 
-/** Common GST slabs. 12% and 28% were replaced on 22 Sep 2025 but still appear on older invoices. */
-export const CURRENT_RATES = [0, 0.25, 3, 5, 18, 40];
+/**
+ * Rates since the GST rationalisation of 22 Sep 2025 (CBIC Notification 9/2025-Integrated Tax (Rate)):
+ * 5% and 18% are the main rates, 40% is for select sin and luxury goods, and 0.25%, 1.5% and 3%
+ * are special rates for specified goods.
+ */
+export const CURRENT_RATES = [0, 0.25, 1.5, 3, 5, 18, 40];
+
+/** 12% was abolished in that change. 28% now applies only to a few specified goods. Both still appear on older invoices. */
 export const LEGACY_RATES = [12, 28];
 
 /** Divide and round half up, for non-negative BigInts. */

@@ -13,7 +13,7 @@ A free, private GST calculator for India. Add GST to a price or take it out of a
 
 - **Add or remove GST.** Price before GST, or a total that already includes it.
 - **CGST + SGST or IGST.** Same-state sales split the tax in two; other-state sales show IGST.
-- **Every slab.** 0%, 0.25%, 3%, 5%, 18% and 40%, the older 12% and 28% for earlier invoices, and any custom rate.
+- **Every slab.** 0%, 0.25%, 1.5%, 3%, 5%, 18% and 40%, the older 12% and 28% for earlier invoices, and any custom rate.
 - **Amount in words**, with lakh and crore, for tax invoices.
 - **Exact maths.** Money is held in paise and rates in basis points, with `BigInt` for the products, so there are no floating-point errors even at ₹10,000 crore.
 - **Shareable.** "Copy link" puts the inputs in the URL; "Copy summary" gives plain text for a chat or email.
@@ -33,7 +33,7 @@ GST is rounded once, to the nearest paisa (half rounds up). If it comes to an od
 
 ## About the rates
 
-The slabs follow the GST rate rationalisation that took effect on 22 September 2025, when 12% and 28% were replaced for most goods. Which rate applies depends on what you sell, and rates change, so the calculator never picks one for you. Confirm the rate with the [CBIC](https://cbic-gst.gov.in) or your chartered accountant. This is a calculator for guidance, not tax advice.
+The slabs follow the GST rate rationalisation that took effect on 22 September 2025 ([CBIC Notification 9/2025](https://courier.cbic.gov.in/ECCS/advisory/2025/NOTIFICATION%20NO.%209_2025-INTEGRATED%20TAX%20(RATE)%20-1759486719.pdf)): 5% and 18% as the main rates, 40% for select sin and luxury goods, and 0.25%, 1.5% and 3% for specified goods. The old 12% slab was abolished and 28% now applies only to a few specified goods, so both sit under "Older or rare". Which rate applies depends on what you sell, and rates change, so the calculator never picks one for you. Confirm the rate with the [CBIC](https://cbic-gst.gov.in) or your chartered accountant. This is a calculator for guidance, not tax advice.
 
 Rates live in [`src/lib/gst.js`](src/lib/gst.js) (`CURRENT_RATES`, `LEGACY_RATES`). If a slab changes, that is the one place to edit.
 
@@ -42,7 +42,7 @@ Rates live in [`src/lib/gst.js`](src/lib/gst.js) (`CURRENT_RATES`, `LEGACY_RATES
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 28 tests for the maths, formatting and share links
+npm test           # 30 tests for the maths, formatting and share links
 npm run build      # static site in dist/
 ```
 

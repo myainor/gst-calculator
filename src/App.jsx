@@ -144,15 +144,15 @@ export default function App() {
 
             <div className="field">
               <span className="label" id="rate-label">GST rate</span>
-              <div className="chips" role="group" aria-labelledby="rate-label">
+              <div className="chips chips-main" role="group" aria-labelledby="rate-label">
                 {CURRENT_RATES.map((r) => (
                   <button key={r} type="button" className="chip" aria-pressed={isChip(r)} onClick={() => pickRate(r)}>
                     {r}%
                   </button>
                 ))}
               </div>
-              <div className="chips chips-legacy" role="group" aria-label="Older GST rates">
-                <span className="chips-tag">Older invoices</span>
+              <div className="chips chips-legacy" role="group" aria-label="Older or rarely used GST rates">
+                <span className="chips-tag">Older or rare</span>
                 {LEGACY_RATES.map((r) => (
                   <button key={r} type="button" className="chip chip-sm" aria-pressed={isChip(r)} onClick={() => pickRate(r)}>
                     {r}%

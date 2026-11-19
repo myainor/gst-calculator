@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   MAX_RUPEES, parseAmount, parseRate, calculate, groupIndian, formatPaise, formatRate,
-  amountInWords, toQuery, fromQuery, summarize, DEFAULTS,
+  amountInWords, toQuery, fromQuery, summarize, DEFAULTS, CURRENT_RATES, LEGACY_RATES,
 } from '../src/lib/gst.js';
 
 const calc = (amountRupees, rate, mode = 'exclusive', supply = 'intra') =>
@@ -184,5 +184,19 @@ describe('summarize', () => {
   });
   it('names IGST for other-state supply', () => {
     expect(summarize(calc(100, 5, 'exclusive', 'inter'))).toContain('(IGST 5% ₹5.00)');
+  });
+});
+
+describe('rate presets', () => {
+  it('every preset is a valid whole number of basis points', () => {
+    for (const r of [...CURRENT_RATES, ...LEGACY_RATES]) {
+      const bp = parseRate(String(r));
+      expect(bp).not.toBeNull();
+      expect(bp / 100).toBe(r);
+    }
+  });
+  it('no preset appears twice', () => {
+    const all = [...CURRENT_RATES, ...LEGACY_RATES];
+    expect(new Set(all).size).toBe(all.length);
   });
 });
