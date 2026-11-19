@@ -11,12 +11,24 @@
   },
   "homepage": "https://gst.freelysta.com",
   "bugs": "https://github.com/myainor/gst-calculator/issues",
-  "keywords": ["gst", "gst-calculator", "india", "cgst", "sgst", "igst", "tax", "react", "vite", "freelancer"],
+  "keywords": [
+    "gst",
+    "gst-calculator",
+    "india",
+    "cgst",
+    "sgst",
+    "igst",
+    "tax",
+    "react",
+    "vite",
+    "freelancer"
+  ],
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr && node scripts/postbuild.mjs",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.2.0",
@@ -29,5 +41,7 @@
     "vite": "^7.2.4",
     "vitest": "^3.2.4"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

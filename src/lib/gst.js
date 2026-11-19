@@ -9,18 +9,14 @@
  * basis points is larger than Number.MAX_SAFE_INTEGER.
  */
 
+import { SLABS } from '../data/rates.js';
+
 export const MAX_RUPEES = 100_000_000_000; // ₹10,000 crore, far above any real invoice
 export const MAX_PAISE = MAX_RUPEES * 100;
 
-/**
- * Rates since the GST rationalisation of 22 Sep 2025 (CBIC Notification 9/2025-Integrated Tax (Rate)):
- * 5% and 18% are the main rates, 40% is for select sin and luxury goods, and 0.25%, 1.5% and 3%
- * are special rates for specified goods.
- */
-export const CURRENT_RATES = [0, 0.25, 1.5, 3, 5, 18, 40];
-
-/** 12% was abolished in that change. 28% now applies only to a few specified goods. Both still appear on older invoices. */
-export const LEGACY_RATES = [12, 28];
+/** Rate buttons come from src/data/rates.js, so the table, FAQ and calculator can never disagree. */
+export const CURRENT_RATES = SLABS.filter((s) => s.status === 'current').map((s) => s.rate);
+export const LEGACY_RATES = SLABS.filter((s) => s.status === 'legacy').map((s) => s.rate);
 
 /** Divide and round half up, for non-negative BigInts. */
 function divRound(numerator, denominator) {
@@ -88,6 +84,36 @@ export function calculate({ amount, rateBp, mode, supply }) {
     mode,
     supply,
   };
+}
+
+/* ---------- several items, each with its own rate ---------- */
+
+export const MAX_ITEMS = 25;
+
+const ZERO = { base: 0, gst: 0, cgst: 0, sgst: 0, igst: 0, total: 0 };
+const add = (a, b) => ({
+  base: a.base + b.base, gst: a.gst + b.gst, cgst: a.cgst + b.cgst,
+  sgst: a.sgst + b.sgst, igst: a.igst + b.igst, total: a.total + b.total,
+});
+const pick = ({ base, gst, cgst, sgst, igst, total }) => ({ base, gst, cgst, sgst, igst, total });
+
+/**
+ * GST for a list of items, the way an invoice does it: each line is rounded on its own, then the lines are added.
+ * @param {{amount:number, rateBp:number}[]} items  amount in paise, rate in basis points
+ * @returns {{lines: object[], byRate: object[], totals: object}}
+ */
+export function calculateItems(items, { mode, supply }) {
+  const lines = items.map(({ amount, rateBp }) => ({
+    ...pick(calculate({ amount, rateBp, mode, supply })), rateBp,
+  }));
+  const groups = new Map();
+  for (const line of lines) {
+    const prev = groups.get(line.rateBp) ?? { ...ZERO, rateBp: line.rateBp, count: 0 };
+    groups.set(line.rateBp, { ...add(prev, line), rateBp: line.rateBp, count: prev.count + 1 });
+  }
+  const byRate = [...groups.values()].sort((x, y) => x.rateBp - y.rateBp);
+  const totals = lines.reduce((acc, l) => add(acc, l), { ...ZERO });
+  return { lines, byRate, totals };
 }
 
 /* ---------- formatting ---------- */
@@ -206,6 +232,27 @@ export function summarize(result, url = '') {
     `Total with GST: ${rupee(result.total)}`,
   ];
   const words = amountInWords(result.total);
+  if (words) lines.push(words);
+  if (url) lines.push('', `Calculated on ${url}`);
+  return lines.join('\n');
+}
+
+/** Plain-text summary for several items. */
+export function summarizeItems(res, { supply }, url = '') {
+  const rupee = (p) => `₹${formatPaise(p)}`;
+  const lines = ['GST calculation (several items)'];
+  for (const g of res.byRate) {
+    const split = supply === 'intra'
+      ? `CGST ${rupee(g.cgst)} + SGST ${rupee(g.sgst)}`
+      : `IGST ${rupee(g.igst)}`;
+    lines.push(`At ${formatRate(g.rateBp)}%: ${rupee(g.base)} before GST, ${split}`);
+  }
+  lines.push(
+    `Before GST: ${rupee(res.totals.base)}`,
+    `Total GST: ${rupee(res.totals.gst)}`,
+    `Total with GST: ${rupee(res.totals.total)}`,
+  );
+  const words = amountInWords(res.totals.total);
   if (words) lines.push(words);
   if (url) lines.push('', `Calculated on ${url}`);
   return lines.join('\n');

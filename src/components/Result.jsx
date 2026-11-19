@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { formatPaise, formatRate, amountInWords, summarize, toQuery } from '../lib/gst.js';
-import { Copy, Link, Reset, Check } from './Icons.jsx';
+import { Copy, Link, Reset, Check, WhatsApp } from './Icons.jsx';
+import AnimatedAmount from './AnimatedAmount.jsx';
 
 const rupee = (p) => formatPaise(p);
 
@@ -64,7 +65,7 @@ export default function Result({ result, state, onReset }) {
       <div className="hero">
         <span className="hero-label">{removing ? 'Amount before GST' : 'Total with GST'}</span>
         <output className={`hero-num${hasValue ? '' : ' is-empty'}`} aria-live="polite">
-          <span className="cur">₹</span>{rupee(removing ? result.base : result.total)}
+          <AnimatedAmount paise={removing ? result.base : result.total} />
         </output>
         <span className="hero-words">{hasValue ? (removing ? wordsBase : words) : 'Enter an amount to see the breakdown'}</span>
       </div>
@@ -97,6 +98,14 @@ export default function Result({ result, state, onReset }) {
         <button type="button" className="btn" disabled={!hasValue} onClick={() => copy('link', shareUrl())}>
           {copied === 'link' ? <Check /> : <Link />}{copied === 'link' ? 'Link copied' : 'Copy link'}
         </button>
+        <a
+          className={`btn${hasValue ? '' : ' is-disabled'}`}
+          href={hasValue ? `https://wa.me/?text=${encodeURIComponent(summarize(result, shareUrl()))}` : undefined}
+          target="_blank" rel="noopener noreferrer" aria-disabled={!hasValue}
+          onClick={(e) => { if (!hasValue) e.preventDefault(); }}
+        >
+          <WhatsApp />WhatsApp
+        </a>
         <button type="button" className="btn btn-ghost" onClick={onReset}>
           <Reset />Reset
         </button>

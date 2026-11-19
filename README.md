@@ -16,7 +16,9 @@ A free, private GST calculator for India. Add GST to a price or take it out of a
 - **Every slab.** 0%, 0.25%, 1.5%, 3%, 5%, 18% and 40%, the older 12% and 28% for earlier invoices, and any custom rate.
 - **Amount in words**, with lakh and crore, for tax invoices.
 - **Exact maths.** Money is held in paise and rates in basis points, with `BigInt` for the products, so there are no floating-point errors even at ₹10,000 crore.
-- **Shareable.** "Copy link" puts the inputs in the URL; "Copy summary" gives plain text for a chat or email.
+- **Several items at once.** Each line has its own rate; GST is rounded per line like an invoice, with a by-rate breakdown.
+- **Worked examples and a rates table**, computed by the same code as the calculator.
+- **Shareable.** "Copy link" puts the inputs in the URL; "Copy summary" gives plain text for a chat or email; one tap opens WhatsApp with the summary.
 - **Private.** No server, no accounts, no cookies, no analytics. Your amounts are never stored.
 - **Light and dark themes**, keyboard friendly, and works on a phone.
 
@@ -35,38 +37,58 @@ GST is rounded once, to the nearest paisa (half rounds up). If it comes to an od
 
 The slabs follow the GST rate rationalisation that took effect on 22 September 2025 ([CBIC Notification 9/2025](https://courier.cbic.gov.in/ECCS/advisory/2025/NOTIFICATION%20NO.%209_2025-INTEGRATED%20TAX%20(RATE)%20-1759486719.pdf)): 5% and 18% as the main rates, 40% for select sin and luxury goods, and 0.25%, 1.5% and 3% for specified goods. The old 12% slab was abolished and 28% now applies only to a few specified goods, so both sit under "Older or rare". Which rate applies depends on what you sell, and rates change, so the calculator never picks one for you. Confirm the rate with the [CBIC](https://cbic-gst.gov.in) or your chartered accountant. This is a calculator for guidance, not tax advice.
 
-Rates live in [`src/lib/gst.js`](src/lib/gst.js) (`CURRENT_RATES`, `LEGACY_RATES`). If a slab changes, that is the one place to edit.
+Rates live in [`src/data/rates.js`](src/data/rates.js). The rate buttons, the rates table, the FAQ and `gst-rates.json` all read from it, so if a slab changes that is the one place to edit (then update `RATES_CHECKED`).
 
 ## Run it locally
 
 ```bash
 npm install
 npm run dev        # http://localhost:5173
-npm test           # 30 tests for the maths, formatting and share links
-npm run build      # static site in dist/
+npm test           # tests for the maths, formatting, share links and the generated SEO files
+npm run build      # pre-rendered static site in dist/
+npm run indexnow   # tell IndexNow search engines about the live URLs (after deploying)
 ```
 
 Requires Node 20 or newer.
 
 ## Host it yourself
 
-`npm run build` produces a plain static site in `dist/`. Put it on any static host or web server. It makes no network requests, fonts are bundled, and it needs no server-side code. If you serve it from a path other than `/`, set `base` in `vite.config.js`.
+`npm run build` produces a plain static site in `dist/`: the page is pre-rendered to HTML, then hydrated in the browser. Put it on any static host or web server. It makes no network requests, fonts are bundled, and it needs no server-side code. If you serve it from a path other than `/`, set `base` in `vite.config.js`.
+
+## For search engines and AI assistants
+
+The build writes machine-readable copies of everything on the page:
+
+- `/llms.txt` and `/llms-full.txt`: a short index and the full FAQ, worked examples and rates in Markdown ([llms.txt format](https://llmstxt.org)).
+- `/gst-rates.json`: the rate slabs, formulas and sources as JSON.
+- FAQPage, WebApplication and Organization structured data (JSON-LD) in the page head.
+- `robots.txt` that allows search and AI crawlers, and a `sitemap.xml`.
+
+The FAQ lives in [`src/data/faq.js`](src/data/faq.js) and feeds the page, the structured data and `llms-full.txt`, so they cannot drift apart. The worked examples are computed by the calculator, not typed by hand.
+
+After deploying, `npm run indexnow` submits the URLs to [IndexNow](https://www.indexnow.org) (Bing, Yandex, Naver, Seznam and others). Set the key in `INDEXNOW_KEY` or keep the key file in `public/`.
 
 ## Project layout
 
 ```
 src/lib/gst.js          the maths, formatting, amount in words and URL state (no UI code)
+src/data/rates.js       the GST slabs and their sources
+src/data/faq.js         the FAQ and the computed worked examples
 src/App.jsx             the calculator
-src/components/         result card, segmented control, FAQ, icons
+src/components/         result card, multiple items, examples, rates table, FAQ, Freelysta band, icons
 src/styles.css          all styling, themes are custom properties
-test/gst.test.js        tests for src/lib/gst.js
+src/entry-server.jsx    server render used for pre-rendering
+scripts/postbuild.mjs   pre-renders index.html and writes the SEO files
+scripts/site.mjs        generators for JSON-LD, llms.txt, gst-rates.json, robots.txt, sitemap.xml
+scripts/indexnow.mjs    IndexNow submission
+test/                   tests for the maths, multiple items and the generated files
 scripts/og/og.html      source for the social preview image
 ```
 
 ## Contributing
 
-Bug reports and pull requests are welcome. Please add a test for any change to the maths. Rate changes only need an edit to `src/lib/gst.js` and its tests.
+Bug reports and pull requests are welcome. Please add a test for any change to the maths. Rate changes only need an edit to `src/data/rates.js` and its tests.
 
 ## License
 
-[MIT](LICENSE). Made by [Freelysta](https://freelysta.com). Looking for a full invoice? Try the free, open-source [invoice generator](https://github.com/myainor/invoice-generator).
+[MIT](LICENSE) for the code. Made by [Freelysta](https://freelysta.com). The Freelysta name and logo (in `src/assets/brand`) are trademarks of Freelysta and are not covered by the MIT license: if you fork this, replace them with your own branding. Looking for a full invoice? Try the free, open-source [invoice generator](https://github.com/myainor/invoice-generator).

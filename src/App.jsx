@@ -6,16 +6,15 @@ import {
 import Segmented from './components/Segmented.jsx';
 import Result from './components/Result.jsx';
 import Faq from './components/Faq.jsx';
-import { Sun, Moon, Github, Shield, Mark } from './components/Icons.jsx';
+import Multi from './components/Multi.jsx';
+import Examples from './components/Examples.jsx';
+import RatesTable from './components/RatesTable.jsx';
+import FreelystaBand, { FREELYSTA_URL } from './components/FreelystaBand.jsx';
+import { FreelystaMark, FreelystaWordmark } from './components/Brand.jsx';
+import { Sun, Moon, Github, Shield } from './components/Icons.jsx';
+import { MODES, SUPPLY, VIEWS } from './data/options.js';
 
-const MODES = [
-  { value: 'exclusive', label: 'Add GST', hint: 'Price is before GST' },
-  { value: 'inclusive', label: 'Remove GST', hint: 'Price includes GST' },
-];
-const SUPPLY = [
-  { value: 'intra', label: 'Same state', hint: 'CGST + SGST' },
-  { value: 'inter', label: 'Other state', hint: 'IGST' },
-];
+const isBrowser = typeof window !== 'undefined';
 
 /** "118000.5" → "1,18,000.5": group the whole part, keep the decimals the way they were typed. */
 function tidy(raw) {
@@ -27,7 +26,9 @@ function tidy(raw) {
 }
 
 function useTheme() {
-  const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark');
+  // Always 'dark' on first render so the server HTML and the first client render match; the real theme is read right after.
+  const [theme, setTheme] = useState('dark');
+  useEffect(() => { setTheme(document.documentElement.dataset.theme || 'dark'); }, []);
   const toggle = () => {
     const next = theme === 'dark' ? 'light' : 'dark';
     document.documentElement.dataset.theme = next;
@@ -39,12 +40,14 @@ function useTheme() {
 }
 
 export default function App() {
-  const [state, setState] = useState(() => fromQuery(window.location.search));
+  const [state, setState] = useState(() => (isBrowser ? fromQuery(window.location.search) : { ...DEFAULTS }));
   // True while the rate comes from the free-text box rather than one of the buttons.
   const [custom, setCustom] = useState(() => {
+    if (!isBrowser) return false;
     const bp = parseRate(fromQuery(window.location.search).rate);
     return ![...CURRENT_RATES, ...LEGACY_RATES].some((r) => Math.round(r * 100) === bp);
   });
+  const [view, setView] = useState('single');
   const [theme, toggleTheme] = useTheme();
   const amountRef = useRef(null);
   const set = (patch) => setState((s) => ({ ...s, ...patch }));
@@ -85,6 +88,14 @@ export default function App() {
 
   const words = amount ? amountInWords(amount) : '';
 
+  /** Load a worked example into the calculator and bring it into view. */
+  const tryExample = (e) => {
+    setView('single');
+    setCustom(![...CURRENT_RATES, ...LEGACY_RATES].includes(e.rate));
+    setState({ amount: String(e.amount), rate: String(e.rate), mode: e.mode, supply: e.supply });
+    document.getElementById('calc')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   return (
     <>
       <a className="skip" href="#calc">Skip to the calculator</a>
@@ -92,10 +103,17 @@ export default function App() {
 
       <header className="bar">
         <div className="wrap bar-in">
-          <a className="brand" href="/" aria-label="GST Calculator home">
-            <Mark /><span>GST<b>calc</b></span>
-          </a>
+          <div className="brand-row">
+            <a className="brand-fl" href={FREELYSTA_URL} target="_blank" rel="noopener noreferrer" aria-label="Freelysta">
+              <FreelystaMark size={30} /><FreelystaWordmark height={13} className="brand-word" />
+            </a>
+            <i className="brand-sep" aria-hidden="true" />
+            <a className="brand" href="/" aria-label="GST Calculator home">GST<b>calc</b></a>
+          </div>
           <nav className="bar-nav" aria-label="Site">
+            <a className="bar-link" href="#examples">Examples</a>
+            <a className="bar-link" href="#rates">Rates</a>
+            <a className="bar-link" href="#faq">FAQ</a>
             <a className="bar-link" href="https://invoice.freelysta.com" target="_blank" rel="noopener noreferrer">Invoice generator</a>
             <a className="icon-btn" href="https://github.com/myainor/gst-calculator" target="_blank" rel="noopener noreferrer" aria-label="View source on GitHub"><Github /></a>
             <button type="button" className="icon-btn" onClick={toggleTheme} aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}>
@@ -107,12 +125,19 @@ export default function App() {
 
       <main className="wrap">
         <section className="intro">
-          <span className="pill"><Shield />Free · Private · Runs in your browser</span>
+          <span className="pill"><Shield />Free · Private · Open source · by Freelysta</span>
           <h1>Add or remove <span className="grad">GST</span> in a second.</h1>
           <p>CGST, SGST and IGST split out, with the amount in words. Nothing you type leaves your device.</p>
+          <div className="view-switch">
+            <Segmented label="Calculator mode" value={view} options={VIEWS} onChange={setView} />
+          </div>
         </section>
 
         <div className="grid" id="calc">
+          {view === 'items' ? (
+            <Multi mode={state.mode} supply={state.supply} onMode={(mode) => set({ mode })} onSupply={(supply) => set({ supply })} />
+          ) : (
+          <>
           <section className="card form" aria-labelledby="form-title">
             <h2 id="form-title" className="sr-only">Inputs</h2>
 
@@ -182,6 +207,8 @@ export default function App() {
           </section>
 
           <Result result={result} state={state} onReset={reset} />
+          </>
+          )}
         </div>
 
         <aside className="cta" aria-label="Related tool">
@@ -192,14 +219,26 @@ export default function App() {
           <a className="btn btn-primary" href="https://invoice.freelysta.com" target="_blank" rel="noopener noreferrer">Open the invoice generator</a>
         </aside>
 
+        <Examples onTry={tryExample} />
+        <RatesTable />
         <Faq />
+        <FreelystaBand />
       </main>
 
       <footer className="foot">
         <div className="wrap foot-in">
+          <a className="foot-brand" href={FREELYSTA_URL} target="_blank" rel="noopener noreferrer" aria-label="Freelysta">
+            <FreelystaMark size={26} /><FreelystaWordmark height={12} />
+          </a>
           <p>
-            Made by <a href="https://freelysta.com" target="_blank" rel="noopener noreferrer">Freelysta</a>, the workspace for freelancers.
+            Made by <a href={FREELYSTA_URL} target="_blank" rel="noopener noreferrer">Freelysta</a>, the workspace for freelancers.
             Open source under the MIT license on <a href="https://github.com/myainor/gst-calculator" target="_blank" rel="noopener noreferrer">GitHub</a>.
+          </p>
+          <p className="links">
+            <a href="https://invoice.freelysta.com" target="_blank" rel="noopener noreferrer">Invoice generator</a>
+            <a href="/llms.txt">llms.txt</a>
+            <a href="/gst-rates.json">Rates as JSON</a>
+            <a href="/sitemap.xml">Sitemap</a>
           </p>
           <p className="fine">A calculator for guidance, not tax advice. GST rates depend on what you sell and change over time, so check the current rate with the CBIC or your chartered accountant.</p>
         </div>
